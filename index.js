@@ -1,7 +1,9 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
+require("dotenv").config();
 const app = express();
+
 const port = process.env.PORT || 3000;
 
 // middlewares
@@ -10,8 +12,8 @@ app.use(express.json());
 
 // SmartDB
 // Dq1xWNGdHyL80mkj
-const uri =
-  "mongodb+srv://SmartDB:Dq1xWNGdHyL80mkj@cluster0.um9bwdr.mongodb.net/?appName=Cluster0";
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.um9bwdr.mongodb.net/${process.env.DB_NAME}?appName=Cluster0`;
+
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -31,6 +33,10 @@ async function run() {
     const bidCollection = myDB.collection('bid_collection')
 
 
+
+
+    // for products  collection 
+
     app.post("/products", async (req, res) => {
       const product = req.body;
       console.log("New Product:", product);
@@ -39,8 +45,6 @@ async function run() {
     });
 
     app.get("/products", async (req, res) => {
-
-
 
       console.log(req.query);
       const email = req.query.email;
@@ -60,15 +64,35 @@ async function run() {
 
     app.get("/products/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
+      // const query = { _id: new ObjectId(id) };
+      const query = { _id: id };
       const result = await productsCollection.findOne(query);
       res.send(result);
     });
 
+
+
+
+
+
+
+
+
+
+
+
+
+    app.get('/latestProducts', async(req,res) =>{
+      const cursor =productsCollection.find().sort({ created_at: -1 }).limit(6);
+      const result = (await cursor.toArray());
+      res.send(result);
+    })
+
     app.delete("/products/:id", async (req, res) => {
       const id = req.params.id;
       console.log("Deleting Product ID:", id);
-      const query = { _id: new ObjectId(id) };
+      // const query = { _id: new ObjectId(id) };
+      const query = { _id: id };
       const result = await productsCollection.deleteOne(query);
 
       res.send(result);
@@ -106,6 +130,25 @@ app.get("/bids", async (req, res) => {
   const result = await cursor.toArray();
   res.send(result);
 });
+
+
+
+
+
+    // fo a particular product 
+
+app.get('/products/bids/:productId',async(req, res) =>{
+  const productId = req.params.productId;
+  const query= {product: productId};
+  const cursor = bidCollection.find(query).sort({bid_price: -1});
+  const result = await cursor.toArray();
+  res.send(result)
+  
+})
+
+
+
+
 
 app.post('/bids', async (req, res)=>{
   const newBid = req.body;
